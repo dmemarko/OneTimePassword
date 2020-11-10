@@ -36,7 +36,8 @@ public extension Token {
             issuer: issuer,
             factor: generator.factor,
             algorithm: generator.algorithm,
-            digits: generator.digits
+            digits: generator.digits,
+            imageUrl: imageUrl
         )
     }
 
@@ -83,6 +84,7 @@ private let kQueryCounterKey = "counter"
 private let kQueryDigitsKey = "digits"
 private let kQueryPeriodKey = "period"
 private let kQueryIssuerKey = "issuer"
+private let kQueryImageKey = "image"
 
 private let kFactorCounterKey = "hotp"
 private let kFactorTimerKey = "totp"
@@ -115,7 +117,7 @@ private func algorithmFromString(_ string: String) throws -> Generator.Algorithm
     }
 }
 
-private func urlForToken(name: String, issuer: String, factor: Generator.Factor, algorithm: Generator.Algorithm, digits: Int) throws -> URL {
+private func urlForToken(name: String, issuer: String, factor: Generator.Factor, algorithm: Generator.Algorithm, digits: Int, imageUrl: String? = nil) throws -> URL {
     var urlComponents = URLComponents()
     urlComponents.scheme = kOTPAuthScheme
     urlComponents.path = "/" + name
@@ -125,6 +127,10 @@ private func urlForToken(name: String, issuer: String, factor: Generator.Factor,
         URLQueryItem(name: kQueryDigitsKey, value: String(digits)),
         URLQueryItem(name: kQueryIssuerKey, value: issuer),
     ]
+    
+    if let imageUrl = imageUrl {
+        queryItems.append(URLQueryItem(name: kQueryImageKey, value: imageUrl))
+    }
 
     switch factor {
     case .timer(let period):
@@ -184,11 +190,13 @@ private func token(from url: URL, secret externalSecret: Data? = nil) throws -> 
         // The default value is an empty string
         issuer = ""
     }
+    
+    let imageUrl: String? = try? queryItems.value(for: kQueryImageKey)
 
     // If the name is prefixed by the issuer string, trim the name
     let name = shortName(byTrimming: issuer, from: fullName)
 
-    return Token(name: name, issuer: issuer, generator: generator)
+    return Token(name: name, issuer: issuer, generator: generator, imageUrl: imageUrl)
 }
 
 private func parseCounterValue(_ rawValue: String) throws -> UInt64 {

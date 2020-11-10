@@ -36,6 +36,9 @@ public struct Token: Equatable {
 
     /// A password generator containing this token's secret, algorithm, etc.
     public let generator: Generator
+    
+    /// A string with address to image if exist.
+    public var imageUrl: String?
 
     /// Initializes a new token with the given parameters.
     ///
@@ -44,10 +47,11 @@ public struct Token: Equatable {
     /// - parameter generator:  The password generator.
     ///
     /// - returns: A new token with the given parameters.
-    public init(name: String = "", issuer: String = "", generator: Generator) {
+    public init(name: String = "", issuer: String = "", generator: Generator, imageUrl: String? = nil) {
         self.name = name
         self.issuer = issuer
         self.generator = generator
+        self.imageUrl = imageUrl
     }
 
     // MARK: Password Generation
@@ -66,6 +70,6 @@ public struct Token: Equatable {
 
     /// - returns: A new `Token`, configured to generate the next password.
     public func updatedToken() -> Token {
-        return Token(name: name, issuer: issuer, generator: generator.successor())
+        return Token(name: name, issuer: issuer, generator: generator.successor(), imageUrl: imageUrl)
     }
 }
