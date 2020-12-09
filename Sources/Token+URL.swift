@@ -40,6 +40,18 @@ public extension Token {
             imageUrl: imageUrl
         )
     }
+    
+    func toBackupURL() throws -> URL {
+        return try urlForToken(
+            name: name,
+            issuer: issuer,
+            factor: generator.factor,
+            algorithm: generator.algorithm,
+            digits: generator.digits,
+            secret: generator.secret,
+            imageUrl: imageUrl
+        )
+    }
 
     /// Attempts to initialize a token represented by the give URL.
     init?(url: URL, secret: Data? = nil) {
@@ -117,7 +129,7 @@ private func algorithmFromString(_ string: String) throws -> Generator.Algorithm
     }
 }
 
-private func urlForToken(name: String, issuer: String, factor: Generator.Factor, algorithm: Generator.Algorithm, digits: Int, imageUrl: String? = nil) throws -> URL {
+private func urlForToken(name: String, issuer: String, factor: Generator.Factor, algorithm: Generator.Algorithm, digits: Int, secret: Data? = nil, imageUrl: String? = nil) throws -> URL {
     var urlComponents = URLComponents()
     urlComponents.scheme = kOTPAuthScheme
     urlComponents.path = "/" + name
@@ -127,6 +139,11 @@ private func urlForToken(name: String, issuer: String, factor: Generator.Factor,
         URLQueryItem(name: kQueryDigitsKey, value: String(digits)),
         URLQueryItem(name: kQueryIssuerKey, value: issuer),
     ]
+    
+    if let secret = secret {
+        let secretString = MF_Base32Codec.base32String(from: secret)
+        queryItems.append(URLQueryItem(name: kQuerySecretKey, value: secretString))
+    }
     
     if let imageUrl = imageUrl {
         queryItems.append(URLQueryItem(name: kQueryImageKey, value: imageUrl))
