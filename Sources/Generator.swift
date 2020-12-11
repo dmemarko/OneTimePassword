@@ -85,38 +85,20 @@ public struct Generator: Equatable {
         // Generate an HMAC value from the key and counter
         let counterData = Data(bytes: &bigCounter, count: MemoryLayout<UInt64>.size)
         let hash = HMAC(algorithm: algorithm, key: secret, data: counterData)
-
-        #if swift(>=5.0)
-        var truncatedHash = hash.withUnsafeBytes { ptr -> UInt32 in
-            // Use the last 4 bits of the hash as an offset (0 <= offset <= 15)
-            let offset = ptr[hash.count - 1] & 0x0f
-
-            // Take 4 bytes from the hash, starting at the given byte offset
-            let truncatedHashPtr = ptr.baseAddress! + Int(offset)
-            return truncatedHashPtr.bindMemory(to: UInt32.self, capacity: 1).pointee
-        }
-        #else
-        var truncatedHash = hash.withUnsafeBytes { (ptr: UnsafePointer<UInt8>) -> UInt32 in
-            // Use the last 4 bits of the hash as an offset (0 <= offset <= 15)
-            let offset = ptr[hash.count - 1] & 0x0f
-
-            // Take 4 bytes from the hash, starting at the given byte offset
-            let truncatedHashPtr = ptr + Int(offset)
-            return truncatedHashPtr.withMemoryRebound(to: UInt32.self, capacity: 1) {
-                $0.pointee
-            }
-        }
-        #endif
-
-        // Ensure the four bytes taken from the hash match the current endian format
-        truncatedHash = UInt32(bigEndian: truncatedHash)
-        // Discard the most significant bit
-        truncatedHash &= 0x7fffffff
-        // Constrain to the right number of digits
-        truncatedHash = truncatedHash % UInt32(pow(10, Float(digits)))
-
+        
+        let offset = Int(hash[hash.count - 1]) & 0x0f;
+        
+        let firstByte = UInt64(hash[offset] & 0x7f) << 24
+        let secondByte = UInt64(hash[offset + 1] & 0xff) << 16
+        let thirdByte = UInt64(hash[offset + 2] & 0xff) << 8
+        let fourthByte = UInt64(hash[offset + 3] & 0xff)
+        
+        let binary = firstByte + secondByte + thirdByte + fourthByte
+        
+        let codeInt = binary % UInt64(pow(10, Float(digits)))
+        
         // Pad the string representation with zeros, if necessary
-        return String(truncatedHash).padded(with: "0", toLength: digits)
+        return String(codeInt).padded(with: "0", toLength: digits)
     }
 
     // MARK: Update
@@ -210,8 +192,8 @@ private extension Generator {
 
     static func validateDigits(_ digits: Int) throws {
         // https://tools.ietf.org/html/rfc4226#section-5.3 states "Implementations MUST extract a
-        // 6-digit code at a minimum and possibly 7 and 8-digit codes."
-        let acceptableDigits = 6...8
+        // 6-digit code at a minimum and possibly [7:10]-digit codes."
+        let acceptableDigits = 6...10
         guard acceptableDigits.contains(digits) else {
             throw Error.invalidDigits
         }
