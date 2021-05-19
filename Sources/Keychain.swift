@@ -238,6 +238,7 @@ private func keychainItem(forPersistentRef persistentRef: Data) throws -> NSDict
 private func allKeychainItems() throws -> [NSDictionary] {
     let queryDict: [String: AnyObject] = [
         kSecClass as String:                kSecClassGenericPassword,
+        kSecAttrService as String:          kOTPService as NSString,
         kSecMatchLimit as String:           kSecMatchLimitAll,
         kSecReturnPersistentRef as String:  kCFBooleanTrue,
         kSecReturnAttributes as String:     kCFBooleanTrue,
