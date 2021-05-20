@@ -72,4 +72,8 @@ public struct Token: Equatable {
     public func updatedToken() -> Token {
         return Token(name: name, issuer: issuer, generator: generator.successor(), imageUrl: imageUrl)
     }
+    
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.issuer == rhs.issuer && lhs.name == rhs.name && lhs.generator == rhs.generator
+    }
 }
