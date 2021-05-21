@@ -48,7 +48,8 @@ public extension Token {
             factor: generator.factor,
             algorithm: generator.algorithm,
             digits: generator.digits,
-            secret: generator.secret
+            secret: generator.secret,
+            imageUrl: imageUrl
         )
     }
 
